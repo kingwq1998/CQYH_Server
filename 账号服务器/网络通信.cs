@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
@@ -262,12 +262,6 @@ namespace 账号服务器
 												}
 												else
 												{
-													if (false)
-													{
-														value3.账号密码 = array[3];
-														try { 主窗口.保存账号(value3); }
-														catch (Exception ex升级) { 主窗口.添加日志("升级密码存储失败: " + ex升级.Message); }
-													}
 													记录认证成功(result.客户地址.Address);
 													// PROTO-01: 不再回显密码哈希, 客户端发包前已自行缓存
 													发送数据(result.客户地址, Encoding.UTF8.GetBytes(array[0] + " 0 " + array[2] + " " + array[3] + " " + 主窗口.游戏区服));
@@ -365,8 +359,9 @@ namespace 账号服务器
 											{
 												IPEndPoint value2;
 												// PROTO-01 v2: 兼容明文 + hash 存储, 通过即顺手升级
+												bool 需要升级门票 = false;
 												bool 凭据通过 = 主窗口.账号数据.TryGetValue(array[2], out var value)
-													&& 账号数据.校验客户端哈希(value, array[3], out bool 需要升级门票);
+													&& 账号数据.校验客户端哈希(value, array[3], out 需要升级门票);
 												if (!凭据通过)
 												{
 													记录认证失败(result.客户地址.Address);

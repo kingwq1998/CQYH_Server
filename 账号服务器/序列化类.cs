@@ -59,6 +59,10 @@ namespace 账号服务器
 			return JsonConvert.SerializeObject(O, 全局设置);
 		}
 
+		// 单文件硬上限: 攻击者控制 Accounts/ 目录写权限时, 通过塞超大 .txt 可触发 OOM (BB).
+		// 64KB 远大于正常账号 JSON, 又能挡住堆爆破.
+		private const long 反序列化单文件上限 = 64 * 1024;
+
 		public static object[] 反序列化(string 文件夹, Type 类型)
 		{
 			List<object> list = new List<object>();
@@ -66,10 +70,22 @@ namespace 账号服务器
 			FileInfo[] files = new DirectoryInfo(文件夹).GetFiles("*.txt");
 			for (int i = 0; i < files.Length; i++)
 			{
-				object obj = JsonConvert.DeserializeObject(File.ReadAllText(files[i].FullName), 类型, 全局设置);
-				if (obj != null)
+				try
 				{
-					list.Add(obj);
+					if (files[i].Length > 反序列化单文件上限)
+					{
+						// 跳过过大文件, 不让单文件污染整批加载 (BB + CC)
+						continue;
+					}
+					object obj = JsonConvert.DeserializeObject(File.ReadAllText(files[i].FullName), 类型, 全局设置);
+					if (obj != null)
+					{
+						list.Add(obj);
+					}
+				}
+				catch
+				{
+					// 单文件解析失败 (磁盘错误 / 畸形 JSON / 类型不匹配) 不能让整批加载中断 (CC)
 				}
 			}
 			return list.ToArray();

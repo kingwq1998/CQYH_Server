@@ -283,17 +283,31 @@ namespace 账号服务器
                 return;
             }
             区服数据 = new Dictionary<string, IPEndPoint>();
-            游戏区服 = File.ReadAllText(".\\Server.txt", Encoding.UTF8).Trim('\r', '\n', ' ');
+            try
+            {
+                游戏区服 = File.ReadAllText(".\\Server.txt", Encoding.UTF8).Trim('\r', '\n', ' ');
+            }
+            catch (Exception 读取异常)
+            {
+                添加日志("读取 Server.txt 失败: " + 读取异常.Message);
+                return;
+            }
             string[] array = 游戏区服.Split(new char[2] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (string text in array)
             {
                 string[] array2 = text.Split(new char[2] { ',', '/' }, StringSplitOptions.RemoveEmptyEntries);
-                if (array2.Length != 3)
+                if (array2.Length != 3
+                    || !IPAddress.TryParse(array2[0], out var 区服地址)
+                    || !int.TryParse(array2[1], out var 区服端口)
+                    || 区服端口 <= 0 || 区服端口 > 65535)
                 {
-                    MessageBox.Show("Server.txt 配置错误, 解析失败的行: " + text);
-                    Environment.Exit(0);
+                    添加日志("Server.txt 配置错误, 跳过该行: " + text);
+                    continue;
                 }
-                区服数据.Add(array2[2], new IPEndPoint(IPAddress.Parse(array2[0]), Convert.ToInt32(array2[1])));
+                if (!区服数据.TryAdd(array2[2], new IPEndPoint(区服地址, 区服端口)))
+                {
+                    添加日志("Server.txt 重复区服名, 已忽略: " + array2[2]);
+                }
             }
             添加日志("网络配置已加载, 当前配置单\r\n" + 游戏区服);
         }
@@ -321,14 +335,21 @@ namespace 账号服务器
                 return;
             }
             object[] array = 序列化类.反序列化(数据目录, typeof(账号数据));
+            int 丢弃数 = 0;
             for (int i = 0; i < array.Length; i++)
             {
                 if (array[i] is 账号数据 账号数据2)
                 {
-                    账号数据[账号数据2.账号名字] = 账号数据2;
+                    // W: 反序列化结果的 账号名字 可能被外部篡改, 加载时复用统一的合法性校验;
+                    // 重名不再 silent overwrite, 改为 TryAdd 让后到者落空 + 计数.
+                    if (!是合法账号名(账号数据2.账号名字) || !账号数据.TryAdd(账号数据2.账号名字, 账号数据2))
+                    {
+                        丢弃数++;
+                        continue;
+                    }
                 }
             }
-            添加日志($"账号数据已加载, 当前账号数: {账号数据.Count}");
+            添加日志($"账号数据已加载, 当前账号数: {账号数据.Count}, 丢弃异常账号: {丢弃数}");
             已注册账号.Text = $"已注册账号: {账号数据.Count}";
         }
 

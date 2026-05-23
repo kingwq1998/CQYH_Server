@@ -552,7 +552,9 @@ namespace 游戏服务器.网络类
 
         public void 处理封包(获取真实IP地址 P)
         {
-            this.网络地址 = $"{P.网络地址一}.{P.网络地址二}.{P.网络地址三}.{P.网络地址四}";
+            // PROTO-08: 客户端可伪造此封包覆盖服务端记录的网络地址, 用于日志欺骗 / 绕过基于 IP 的限速封禁.
+            // socket 的 RemoteEndPoint 才是权威来源, 这里直接丢弃客户端自报值.
+            // 若存在 CDN/反向代理需求, 应由可信前端列表 + 协议层签名重新引入.
         }
 
         public void 处理封包(内挂物品过滤 P)
@@ -649,8 +651,11 @@ namespace 游戏服务器.网络类
         {
         }
 
+        // PROTO-04: 以下 8 个处理器原本无认证检查, 未登录客户端伪造封包就能触发业务逻辑
+        // 或对 this.绑定角色 解引用 → 空指针崩溃. 统一加阶段 / 绑定角色 守卫.
         public void 处理封包(传奇之力激活 P)
         {
+            if (this.当前阶段 != 游戏阶段.正在游戏 || this.绑定角色 == null) return;
             this.绑定角色.激活传奇之力();
         }
 
@@ -660,36 +665,43 @@ namespace 游戏服务器.网络类
 
         public void 处理封包(请求战功信息 P)
         {
+            if (this.当前阶段 != 游戏阶段.正在游戏 || this.绑定角色 == null) return;
             this.绑定角色.发送战功详情();
         }
 
         public void 处理封包(请求战功任务 P)
         {
+            if (this.当前阶段 != 游戏阶段.正在游戏 || this.绑定角色 == null) return;
             this.绑定角色.发送战功任务(P.任务类型);
         }
 
         public void 处理封包(领取战功奖励 P)
         {
+            if (this.当前阶段 != 游戏阶段.正在游戏 || this.绑定角色 == null) return;
             this.绑定角色.领取战功奖励(P.领取类型);
         }
 
         public void 处理封包(购买战功军令 P)
         {
+            if (this.当前阶段 != 游戏阶段.正在游戏 || this.绑定角色 == null) return;
             this.绑定角色.购买战功军令();
         }
 
         public void 处理封包(购买战功积分 P)
         {
+            if (this.当前阶段 != 游戏阶段.正在游戏 || this.绑定角色 == null) return;
             this.绑定角色.购买战功积分(P.购买类型);
         }
 
         public void 处理封包(购买主题礼包 P)
         {
+            if (this.当前阶段 != 游戏阶段.正在游戏 || this.绑定角色 == null) return;
             this.绑定角色.玩家购买主题礼包(P.日期序号, P.物品A_ID, P.物品B_ID, P.物品C_ID, P.物品D_ID);
         }
 
         public void 处理封包(请求主题礼包 P)
         {
+            if (this.当前阶段 != 游戏阶段.正在游戏 || this.绑定角色 == null) return;
             this.绑定角色.玩家请求主题礼包();
         }
 
