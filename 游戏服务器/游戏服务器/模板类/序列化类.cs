@@ -6,9 +6,42 @@ using System.Reflection;
 using ICSharpCode.SharpZipLib.Zip;
 using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace 游戏服务器.模板类
 {
+	internal sealed class 安全类型绑定器 : ISerializationBinder
+	{
+		private static readonly HashSet<string> 允许程序集 = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+		{
+			"游戏服务器", "Assembly-CSharp"
+		};
+
+		public Type BindToType(string assemblyName, string typeName)
+		{
+			string asmShort = (assemblyName ?? string.Empty).Split(',')[0].Trim();
+			if (!string.IsNullOrEmpty(asmShort) && !允许程序集.Contains(asmShort))
+			{
+				throw new System.Runtime.Serialization.SerializationException(
+					"拒绝反序列化未授权类型: " + typeName + " from " + assemblyName);
+			}
+			string fullName = string.IsNullOrEmpty(assemblyName) ? typeName : (typeName + ", " + assemblyName);
+			Type resolved = Type.GetType(fullName);
+			if (resolved == null)
+			{
+				throw new System.Runtime.Serialization.SerializationException(
+					"无法解析反序列化类型: " + fullName);
+			}
+			return resolved;
+		}
+
+		public void BindToName(Type serializedType, out string assemblyName, out string typeName)
+		{
+			assemblyName = serializedType.Assembly.GetName().Name;
+			typeName = serializedType.FullName;
+		}
+	}
+
 	public static class 序列化类
 	{
 		public static readonly JsonSerializerSettings 全局设置;
@@ -22,6 +55,7 @@ namespace 游戏服务器.模板类
 				DefaultValueHandling = DefaultValueHandling.Ignore,
 				NullValueHandling = NullValueHandling.Ignore,
 				TypeNameHandling = TypeNameHandling.Auto,
+				SerializationBinder = new 安全类型绑定器(),
 				Formatting = Formatting.Indented
 			};
 			序列化类.定向字典 = new Dictionary<string, string> { ["Assembly-CSharp"] = "游戏服务器" };

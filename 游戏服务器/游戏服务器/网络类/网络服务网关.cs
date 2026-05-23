@@ -396,7 +396,10 @@ namespace 游戏服务器.网络类
                 {
                     tcpClient.Client.Close();
                 }
-                网络服务网关.等待添加表?.Enqueue(new 客户网络(tcpClient));
+                else
+                {
+                    网络服务网关.等待添加表?.Enqueue(new 客户网络(tcpClient));
+                }
                 /*
                 else if (网络服务网关.网络连接表.Count < 9999)
                 //else if (网络服务网关.网络连接表.Count < (LicenseLoader.isLicense ? 10000 : 5)) //人数限制

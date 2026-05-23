@@ -1,10 +1,11 @@
-﻿using System;
+using System;
+using System.Security.Cryptography;
 
 namespace 账号服务器
 {
 	public sealed class 账号数据
 	{
-		private static Random 随机数 = new Random();
+		private static readonly RandomNumberGenerator 安全随机 = RandomNumberGenerator.Create();
 
 		private static char[] RandomChars = new char[62]
 		{
@@ -29,12 +30,14 @@ namespace 账号服务器
 
 		public static string 生成门票()
 		{
-			string text = "ULS21-";
+			byte[] buf = new byte[32];
+			安全随机.GetBytes(buf);
+			char[] chars = new char[32];
 			for (int i = 0; i < 32; i++)
 			{
-				text += RandomChars[随机数.Next(RandomChars.Length)];
+				chars[i] = RandomChars[buf[i] % RandomChars.Length];
 			}
-			return text;
+			return "ULS21-" + new string(chars);
 		}
 
 		public 账号数据(string 账号, string 密码, string 问题, string 答案)

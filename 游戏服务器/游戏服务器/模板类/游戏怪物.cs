@@ -327,7 +327,21 @@ namespace 游戏服务器.模板类
 						continue;
 					}
 					StreamReader streamReader2;
-					streamReader2 = File.OpenText(Settings.游戏数据目录 + "\\System\\Npc数据\\怪物爆率\\@" + array[1].Substring(1) + ".txt");
+					string 爆率名 = array[1].Substring(1);
+					foreach (char c in 爆率名)
+					{
+						if (!(char.IsLetterOrDigit(c) || c == '_' || c == '-'))
+						{
+							throw new ArgumentException("非法怪物爆率名: " + 爆率名);
+						}
+					}
+					string 爆率根目录 = Path.GetFullPath(Settings.游戏数据目录 + "\\System\\Npc数据\\怪物爆率");
+					string 爆率文件 = Path.GetFullPath(Path.Combine(爆率根目录, "@" + 爆率名 + ".txt"));
+					if (!爆率文件.StartsWith(爆率根目录 + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+					{
+						throw new UnauthorizedAccessException("路径越权: " + 爆率文件);
+					}
+					streamReader2 = File.OpenText(爆率文件);
 					if (array[1].StartsWith('#'))
 					{
 						num2 = ++num;

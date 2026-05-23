@@ -65,6 +65,16 @@ namespace 游戏服务器.网络类
 					读取流.BaseStream.Seek(描述符.下标, SeekOrigin.Begin);
 					int num;
 					num = ((描述符.长度 != 0) ? 描述符.长度 : (读取流.ReadUInt16() - 4));
+					const int 最大封包字节 = 65536;
+					if (num > 最大封包字节)
+					{
+						throw new InvalidOperationException("封包字段长度越界: " + num);
+					}
+					long 可用 = 读取流.BaseStream.Length - 读取流.BaseStream.Position;
+					if (num > 可用)
+					{
+						throw new InvalidOperationException("封包字段长度超过剩余流: " + num);
+					}
 					return (num <= 0) ? ((object)new byte[0]) : ((object)读取流.ReadBytes(num));
 				},
 				[typeof(short)] = delegate(BinaryReader 读取流, 封包字段描述 描述符)

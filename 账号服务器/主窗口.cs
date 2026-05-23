@@ -110,7 +110,28 @@ namespace 账号服务器
 
         public static void 保存账号(账号数据 账号)
         {
-            File.WriteAllText(数据目录 + "\\" + 账号.账号名字 + ".txt", 序列化类.序列化(账号));
+            if (!是合法账号名(账号.账号名字))
+            {
+                throw new ArgumentException("非法账号名: " + 账号.账号名字);
+            }
+            string 根目录 = Path.GetFullPath(数据目录);
+            string 文件路径 = Path.GetFullPath(Path.Combine(根目录, 账号.账号名字 + ".txt"));
+            if (!文件路径.StartsWith(根目录 + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                && !文件路径.StartsWith(根目录 + Path.AltDirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException("路径越权: " + 文件路径);
+            }
+            File.WriteAllText(文件路径, 序列化类.序列化(账号));
+        }
+
+        private static bool 是合法账号名(string 名字)
+        {
+            if (string.IsNullOrEmpty(名字) || 名字.Length > 64) return false;
+            foreach (char c in 名字)
+            {
+                if (!(char.IsLetterOrDigit(c) || c == '_' || c == '-')) return false;
+            }
+            return true;
         }
 
         private void 启动服务_Click(object sender, EventArgs e)

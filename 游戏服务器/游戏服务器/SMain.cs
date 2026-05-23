@@ -90,7 +90,7 @@ namespace 游戏服务器
             InitializeComponent();
             SMain.Main = this;
 
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
             this.ShowView(typeof(SystemLogView));
             ribbonControl1.Enabled = false;
             navBarControl1.Enabled = false;
